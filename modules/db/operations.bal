@@ -172,6 +172,32 @@ public isolated function getWorkflowConfigByOrgAndDefinition(util:Context contex
     }
 }
 
+//get all workflow configs for the org
+public isolated function getWorkflowConfigsForOrg(util:Context context) returns types:OrgWorkflowConfig[]| error {
+    do {
+        OrgWorkflowConfig[] dbWkfConfigs = check from OrgWorkflowConfig config in dbClient->/orgworkflowconfigs(OrgWorkflowConfig)
+                            where config.orgId == context.orgId
+                            select config;
+        types:OrgWorkflowConfig[] wkfConfigs = [];
+        foreach OrgWorkflowConfig dbWkfConfig in dbWkfConfigs {
+            types:OrgWorkflowConfig wkfConfig = {
+                id: dbWkfConfig.id,
+                orgId: dbWkfConfig.orgId,
+                workflowDefinitionId: dbWkfConfig.workflowDefinitionId,
+                assigneeRoles: stringToStringArray(dbWkfConfig.assigneeRoles),
+                assignees: stringToStringArray(dbWkfConfig.assignees),
+                formatRequestData: dbWkfConfig.formatRequestData,
+                externalWorkflowEngineEndpoint: dbWkfConfig.externalWorkflowEngineEndpoint
+            };
+            wkfConfigs.push(wkfConfig);
+        }
+    } on fail error e {
+        string message = "Error while retrieving workflow configurations from the database";
+        util:logError(context, message, e);
+        return error error:DatabaseError(message, e);
+    }
+}
+
 public isolated function updateWorkflowConfigById(util:Context context, string workflowConfigId, types:OrgWorkflowConfigRequest wkfConfigReq) returns types:OrgWorkflowConfig| error {
     do {
         string assigneeRoles = stringArrayToString(wkfConfigReq.assigneeRoles);
@@ -305,6 +331,9 @@ public isolated function getWorkflowInstanceResponseById(util:Context context, s
     } on fail error e {
         string message = "Error while retrieving workflow instance from the database";
         util:logError(context, message, e);
+        if (e is persist:NotFoundError) {
+            return error error:ResourceNotFoundError(string `Workflow instance not found for the given id: ${workflowInstanceId}`);
+        }
         return error error:DatabaseError(message, e, workflowInstanceId = workflowInstanceId);
     }
 }
@@ -354,8 +383,11 @@ public isolated function deleteWorkflowInstance(util:Context context, string wor
         WorkflowInstance dbWkfInstance = check dbClient->/workflowinstances/[workflowInstanceId].delete();
         return dbWkfInstance.id;
     } on fail error e {
-        string message = "Error while deleting workflow instance from the database";
+        string message = string `Error while deleting workflow instance from the database for id: ${workflowInstanceId}`;
         util:logError(context, message, e);
+        if (e is persist:NotFoundError) {
+            return error error:ResourceNotFoundError(string `Workflow instance not found for the given id: ${workflowInstanceId}`);
+        }
         return error error:DatabaseError(message, e, workflowInstanceId = workflowInstanceId);
     }
 }
@@ -367,6 +399,30 @@ public isolated function getWorkflowInstanceData(util:Context context, string wo
     } on fail error e {
         string message = "Error while retrieving workflow instance data from the database";
         util:logError(context, message, e);
+        if (e is persist:NotFoundError) {
+            return error error:ResourceNotFoundError(string `Workflow instance not found for the given id: ${workflowInstanceId}`);
+        }
+        return error error:DatabaseError(message, e, workflowInstanceId = workflowInstanceId);
+    }
+}
+
+public isolated function updateWorkflowInstanceWithReviewerDecision(util:Context context, string workflowInstanceId, types:ReviewerDecisionRequest reviewerDecisionReq) returns string|error {
+    do {
+        WorkflowInstanceUpdate updateData = {
+            reviewedBy: context.userId,
+            reviewerDecision: reviewerDecisionReq.decision.toString(),
+            reviewComment: reviewerDecisionReq.reviewComment,
+            reviewTime: time:utcNow()
+        };
+        WorkflowInstance updatedDbWkfInstance = check dbClient->/workflowinstances/[workflowInstanceId].put(updateData);
+        return updatedDbWkfInstance.id;
+    } on fail error e {
+        string message = "Error while updating workflow instance with reviewer decision in the database";
+        util:logError(context, message, e);
+        if e is persist:NotFoundError {
+            return error error:ResourceNotFoundError(string `Workflow instance not found for the given id: ${workflowInstanceId}`);
+
+        }
         return error error:DatabaseError(message, e, workflowInstanceId = workflowInstanceId);
     }
 }
@@ -471,6 +527,9 @@ public isolated function searchAuditEvents(util:Context context, int 'limit, int
     } on fail error e {
         string message = "Error while searching audit events from the database";
         util:logError(context, message, e);
+        if (e is persist:NotFoundError) {
+            return error error:ResourceNotFoundError("Audit events not found for the given search criteria");
+        }
         return error error:DatabaseError(message, e);
     }
 }

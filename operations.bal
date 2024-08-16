@@ -20,12 +20,33 @@ import workflow_mgt_service.util;
 import workflow_mgt_service.db;
 import ballerina/persist;
 
+//default sorting is by requested time
+//Get orgId from the context
+//if viewed by a manager, show workflows assigned to the manager
+//if viewed by a user, show workflows requested by the user
+//if viewed by an admin, show all workflows?
 public isolated function getWorkflowInstances(util:Context context, int 'limit,
-        int offset, string wkfDefinition, string status,
-        string 'resource, string createdBy) returns types:WorkflowInstanceResponse[]|error {
+        int offset, string? wkfDefinition, string? status,
+        string? 'resource, string? createdBy) returns types:WorkflowInstanceResponse[]|error {
 
      stream<db:AnnotatedWkfInstanceWithRelations, persist:Error?> dbInstances = check db:searchWorkflowInstances(context, 'limit, offset, wkfDefinition, status, 'resource, createdBy);
      return check filterWorkflowInstancesByUser(context, dbInstances);
+}
+
+public isolated function ensureWkfConfigBelongsToCorrectOrg(util:Context context, types:OrgWorkflowConfig wkfConfig) returns boolean|error {
+    if wkfConfig.orgId == context.orgId {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+public isolated function ensureWkfInstanceBelongsToCorrectOrg(util:Context context, types:WorkflowInstanceResponse wkfInstance) returns boolean|error {
+    if wkfInstance.orgId == context.orgId {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 isolated function filterWorkflowInstancesByUser(util:Context context, stream<db:AnnotatedWkfInstanceWithRelations, persist:Error?> dbInstances) returns types:WorkflowInstanceResponse[]|error {
@@ -72,6 +93,9 @@ public isolated function formatDataForReviewer(string workflowInstanceId, json d
     return data;
 }
 
+//if parallel requests are not allowed, check if there is a request in progress and get the status
+//if not no need to check the status
+//used by UI for button text rendering
 public isolated function getWorkflowStatus(http:RequestContext ctx, string wkfDefinitionId, string 'resource) returns types:WorkflowMgtStatus | error  {
     return "APPROVED";
 }

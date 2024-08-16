@@ -24,7 +24,7 @@ public isolated function getFromContext(http:RequestContext ctx, string key) ret
     return "";
 }
 
-public isolated function getContext(http:RequestContext ctx, string orgId) returns Context {
+public isolated function getContext(http:RequestContext ctx) returns Context {
     Context context = {
         requestId: getFromContext(ctx, REQUEST_ID),
         orgId: getFromContext(ctx, ORGANIZATION_ID),
