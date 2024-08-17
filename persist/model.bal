@@ -16,6 +16,7 @@ public type WorkflowDefinition record {|
     boolean executeUponApproval;
     @sql:Name {value: "allow_parallel_requests"}
     boolean allowParallelRequests;
+    @sql:Name {value: "request_format_schema"}
     string requestFormatSchema;
     OrgWorkflowConfig[] orgworkflowconfigs;
 	WorkflowInstance[] workflowinstance;

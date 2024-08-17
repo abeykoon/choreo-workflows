@@ -65,7 +65,7 @@ public type AuditEventOptionalized record {|
     string userId?;
     string workflowDefinitionId?;
     string 'resource?;
-    string? workflowInstanceId?;
+    string workflowInstanceId?;
     string? comment?;
 |};
 
@@ -80,7 +80,7 @@ public type AuditEventUpdate record {|
     string userId?;
     string workflowDefinitionId?;
     string 'resource?;
-    string? workflowInstanceId?;
+    string workflowInstanceId?;
     string? comment?;
 |};
 
@@ -183,3 +183,4 @@ public type OrgWorkflowConfigUpdate record {|
     string? externalWorkflowEngineEndpoint?;
     string workflowDefinitionId?;
 |};
+

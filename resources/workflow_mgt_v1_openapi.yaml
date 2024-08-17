@@ -3,19 +3,19 @@ info:
   title: Workflow Mgt V1
   version: 0.1.0
 servers:
-- url: "{server}:{port}/workflow-mgt/v1"
-  variables:
-    server:
-      default: ""
-    port:
-      default: config:servicePort
+  - url: '{server}:{port}/workflow-mgt/v1'
+    variables:
+      server:
+        default: ''
+      port:
+        default: config:servicePort
 paths:
   /workflow/definitions:
     get:
       summary: Get all the workflow definitions defined in Choreo.
       operationId: getWorkflowDefinitions
       responses:
-        "200":
+        '200':
           description: Ok
           content:
             application/json:
@@ -23,14 +23,14 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/WorkflowDefinition'
-        "500":
-          description: InternalServerError
+        '403':
+          description: Forbidden
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorDetails'
-        "403":
-          description: Forbidden
+        '500':
+          description: InternalServerError
           content:
             application/json:
               schema:
@@ -40,7 +40,7 @@ paths:
       summary: Get all the workflow configurations defined in the organization.
       operationId: getWorkflowConfigs
       responses:
-        "200":
+        '200':
           description: Ok
           content:
             application/json:
@@ -48,14 +48,14 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/OrgWorkflowConfig'
-        "500":
-          description: InternalServerError
+        '403':
+          description: Forbidden
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorDetails'
-        "403":
-          description: Forbidden
+        '500':
+          description: InternalServerError
           content:
             application/json:
               schema:
@@ -68,31 +68,31 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/OrgWorkflowConfig'
+              $ref: '#/components/schemas/OrgWorkflowConfigRequest'
         required: true
       responses:
-        "201":
+        '201':
           description: Created
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/OrgWorkflowConfig'
-        "400":
+        '400':
           description: BadRequest
           content:
             application/json:
               schema:
                 oneOf:
-                - $ref: '#/components/schemas/ErrorDetails'
-                - $ref: '#/components/schemas/ErrorPayload'
-        "500":
-          description: InternalServerError
+                  - $ref: '#/components/schemas/ErrorDetails'
+                  - $ref: '#/components/schemas/ErrorPayload'
+        '403':
+          description: Forbidden
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorDetails'
-        "403":
-          description: Forbidden
+        '500':
+          description: InternalServerError
           content:
             application/json:
               schema:
@@ -102,42 +102,83 @@ paths:
       summary: Update a workflow configuration.
       operationId: putWorkflowConfigsWorkflowConfigId
       parameters:
-      - name: workflow-config-id
-        in: path
-        description: identifier of the workflow configuration
-        required: true
-        schema:
-          type: string
+        - name: workflow-config-id
+          in: path
+          description: identifier of the workflow configuration
+          required: true
+          schema:
+            type: string
       requestBody:
         description: Updated workflow configuration
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/OrgWorkflowConfig'
+              $ref: '#/components/schemas/OrgWorkflowConfigRequest'
         required: true
       responses:
-        "200":
+        '200':
           description: Ok
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/OrgWorkflowConfig'
-        "400":
+        '400':
           description: BadRequest
           content:
             application/json:
               schema:
                 oneOf:
-                - $ref: '#/components/schemas/ErrorDetails'
-                - $ref: '#/components/schemas/ErrorPayload'
-        "500":
+                  - $ref: '#/components/schemas/ErrorDetails'
+                  - $ref: '#/components/schemas/ErrorPayload'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
+        '500':
           description: InternalServerError
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorDetails'
-        "403":
+    delete:
+      summary: Delete a workflow configuration.
+      operationId: deleteWorkflowConfigsWorkflowConfigId
+      parameters:
+        - name: workflow-config-id
+          in: path
+          description: Identifier of the workflow configuration
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrgWorkflowConfig'
+        '400':
+          description: BadRequest
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorPayload'
+        '403':
           description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
+        '404':
+          description: NotFound
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
+        '500':
+          description: InternalServerError
           content:
             application/json:
               schema:
@@ -147,69 +188,68 @@ paths:
       summary: Get filtered workflows active in the organization.
       operationId: getWorkflowInstances
       parameters:
-      - name: limit
-        in: query
-        description: Maximum number of workflows to return
-        schema:
-          type: integer
-          format: int64
-          default: 20
-      - name: offset
-        in: query
-        description: Offset to start returning workflows
-        schema:
-          type: integer
-          format: int64
-          default: 0
-      - name: action
-        in: query
-        description: Action to filter the workflows
-        schema:
-          type: string
-          nullable: true
-      - name: status
-        in: query
-        description: Status to filter the workflows
-        schema:
-          type: string
-          nullable: true
-      - name: resource
-        in: query
-        description: Resource to filter the workflows
-        schema:
-          type: string
-          nullable: true
-      - name: requested-by
-        in: query
-        description: Requested user to filter the workflows
-        schema:
-          type: string
-          nullable: true
+        - name: limit
+          in: query
+          description: Maximum number of workflows to return
+          schema:
+            type: integer
+            format: int64
+            default: 20
+        - name: offset
+          in: query
+          description: Offset to start returning workflows
+          schema:
+            type: integer
+            format: int64
+            default: 0
+        - name: wkfDefinitionId
+          in: query
+          schema:
+            type: string
+            nullable: true
+        - name: status
+          in: query
+          description: Status to filter the workflows
+          schema:
+            type: string
+            nullable: true
+        - name: resource
+          in: query
+          description: Resource to filter the workflows
+          schema:
+            type: string
+            nullable: true
+        - name: created-by
+          in: query
+          description: User who created the workflows to filter the workflows
+          schema:
+            type: string
+            nullable: true
       responses:
-        "200":
+        '200':
           description: Ok
           content:
-            application/octet-stream:
+            application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/WorkflowInstance'
-        "400":
+                  $ref: '#/components/schemas/WorkflowInstanceResponse'
+        '400':
           description: BadRequest
           content:
             application/json:
               schema:
                 oneOf:
-                - $ref: '#/components/schemas/ErrorDetails'
-                - $ref: '#/components/schemas/ErrorPayload'
-        "500":
-          description: InternalServerError
+                  - $ref: '#/components/schemas/ErrorDetails'
+                  - $ref: '#/components/schemas/ErrorPayload'
+        '403':
+          description: Forbidden
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorDetails'
-        "403":
-          description: Forbidden
+        '500':
+          description: InternalServerError
           content:
             application/json:
               schema:
@@ -225,166 +265,175 @@ paths:
               $ref: '#/components/schemas/WorkflowInstanceCreateRequest'
         required: true
       responses:
-        "400":
+        '201':
+          description: Created
+          content:
+            text/plain:
+              schema:
+                type: string
+        '400':
           description: BadRequest
           content:
             application/json:
               schema:
                 oneOf:
-                - $ref: '#/components/schemas/ErrorDetails'
-                - $ref: '#/components/schemas/ErrorPayload'
-        "500":
-          description: InternalServerError
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorDetails'
-        "403":
+                  - $ref: '#/components/schemas/ErrorDetails'
+                  - $ref: '#/components/schemas/ErrorPayload'
+        '403':
           description: Forbidden
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorDetails'
-        "506":
-          description: VariantAlsoNegotiates
+        '500':
+          description: InternalServerError
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
   /workflow-instances/{workflow-instance-id}:
     get:
       summary: Get a specific workflow instance.
       operationId: getWorkflowInstancesWorkflowInstanceId
       parameters:
-      - name: workflow-instance-id
-        in: path
-        description: Identifier of the workflow instance
-        required: true
-        schema:
-          type: string
+        - name: workflow-instance-id
+          in: path
+          description: Identifier of the workflow instance
+          required: true
+          schema:
+            type: string
       responses:
-        "400":
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowInstanceResponse'
+        '400':
           description: BadRequest
           content:
             application/json:
               schema:
                 oneOf:
-                - $ref: '#/components/schemas/ErrorDetails'
-                - $ref: '#/components/schemas/ErrorPayload'
-        "500":
-          description: InternalServerError
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorDetails'
-        "403":
+                  - $ref: '#/components/schemas/ErrorDetails'
+                  - $ref: '#/components/schemas/ErrorPayload'
+        '403':
           description: Forbidden
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorDetails'
-        "404":
+        '404':
           description: NotFound
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorDetails'
-        "506":
-          description: VariantAlsoNegotiates
+        '500':
+          description: InternalServerError
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
     delete:
       summary: Cancel a workflow request.
       operationId: deleteWorkflowInstancesWorkflowInstanceId
       parameters:
-      - name: workflow-instance-id
-        in: path
-        description: Identifier of the workflow instance
-        required: true
-        schema:
-          type: string
+        - name: workflow-instance-id
+          in: path
+          description: Identifier of the workflow instance
+          required: true
+          schema:
+            type: string
       responses:
-        "500":
-          description: InternalServerError
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorDetails'
-        "403":
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorDetails'
-        "404":
-          description: NotFound
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorDetails'
-        "506":
-          description: VariantAlsoNegotiates
-        "400":
-          description: BadRequest
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorPayload'
-  /workflow-instances/status:
-    get:
-      summary: |-
-        Get the status of workflows related to a action and a resource.
-        This is used to check if a request is in progress for a conflicting action.
-      operationId: getWorkflowInstancesStatus
-      parameters:
-      - name: action
-        in: query
-        description: Action performed by the workflow
-        required: true
-        schema:
-          type: string
-      - name: resource
-        in: query
-        description: Resource on which the action is performed
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
+        '200':
           description: Ok
           content:
             text/plain:
               schema:
-                $ref: '#/components/schemas/WorkflowInstanceStatus'
-        "500":
-          description: InternalServerError
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorDetails'
-        "403":
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorDetails'
-        "404":
-          description: NotFound
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorDetails'
-        "400":
+                type: string
+        '400':
           description: BadRequest
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorPayload'
-  /review/{workflow-id}/decision:
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
+        '404':
+          description: NotFound
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
+        '500':
+          description: InternalServerError
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
+  /workflow-instances/status:
+    get:
+      summary: >-
+        Get the status of workflows related to a given Choreo operation and a
+        resource.
+
+        This is used to check if a request is in progress for a conflicting
+        action.
+      operationId: getWorkflowInstancesStatus
+      parameters:
+        - name: wkfDefinitionId
+          in: query
+          description: Id of the workflow definition associated with the Choreo operation
+          required: true
+          schema:
+            type: string
+        - name: resource
+          in: query
+          description: Resource on which the action is performed
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Ok
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/WorkflowMgtStatus'
+        '400':
+          description: BadRequest
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorPayload'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
+        '500':
+          description: InternalServerError
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
+  /review/{workflow-instance-id}/decision:
     post:
       summary: Review a workflow request.
-      operationId: postReviewWorkflowIdDecision
+      operationId: postReviewWorkflowInstanceIdDecision
       parameters:
-      - name: workflow-id
-        in: path
-        description: Identifier of the workflow instance
-        required: true
-        schema:
-          type: string
+        - name: workflow-instance-id
+          in: path
+          description: Identifier of the workflow instance
+          required: true
+          schema:
+            type: string
       requestBody:
         description: Payload with review details
         content:
@@ -393,166 +442,168 @@ paths:
               $ref: '#/components/schemas/ReviewerDecisionRequest'
         required: true
       responses:
-        "400":
+        '201':
+          description: Created
+          content:
+            text/plain:
+              schema:
+                type: string
+        '400':
           description: BadRequest
           content:
             application/json:
               schema:
                 oneOf:
-                - $ref: '#/components/schemas/ErrorDetails'
-                - $ref: '#/components/schemas/ErrorPayload'
-        "500":
-          description: InternalServerError
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorDetails'
-        "403":
+                  - $ref: '#/components/schemas/ErrorDetails'
+                  - $ref: '#/components/schemas/ErrorPayload'
+        '403':
           description: Forbidden
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorDetails'
-        "404":
+        '404':
           description: NotFound
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorDetails'
-        "506":
-          description: VariantAlsoNegotiates
-  /review/{workflow-id}/data:
+        '500':
+          description: InternalServerError
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
+  /review/{workflow-instance-id}/data:
     get:
       summary: |-
         Get the formatted review data captured at the workflow request.
         This is used to display the captured data in UI/email/notifications.
         The format is performed based on the workflow definition.
-      operationId: getReviewWorkflowIdData
+      operationId: getReviewWorkflowInstanceIdData
       parameters:
-      - name: workflow-id
-        in: path
-        description: Identifier of the workflow instance
-        required: true
-        schema:
-          type: string
+        - name: workflow-instance-id
+          in: path
+          description: Identifier of the workflow instance
+          required: true
+          schema:
+            type: string
       responses:
-        "200":
+        '200':
           description: Ok
           content:
             application/json:
               schema:
                 type: object
-        "500":
-          description: InternalServerError
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorDetails'
-        "403":
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorDetails'
-        "404":
-          description: NotFound
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorDetails'
-        "400":
+        '400':
           description: BadRequest
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorPayload'
-  /audits:
-    get:
-      summary: Get all the audits of the workflows in the organization based on the
-        filters.
-      operationId: getAudits
-      parameters:
-      - name: orgId
-        in: query
-        description: Organization ID
-        required: true
-        schema:
-          type: string
-      - name: limit
-        in: query
-        description: Maximum number of audits to return
-        schema:
-          type: integer
-          format: int64
-          default: 20
-      - name: offset
-        in: query
-        description: Offset to start returning audits
-        schema:
-          type: integer
-          format: int64
-          default: 0
-      - name: action
-        in: query
-        description: Action to filter the audits
-        schema:
-          type: string
-          nullable: true
-      - name: status
-        in: query
-        description: Status to filter the audits
-        schema:
-          type: string
-          nullable: true
-      - name: resource
-        in: query
-        description: Resource to filter the audits
-        schema:
-          type: string
-          nullable: true
-      - name: requested-by
-        in: query
-        description: Requested user to filter the audits
-        schema:
-          type: string
-          nullable: true
-      - name: reviwed-by
-        in: query
-        description: Reviewer to filter the audits
-        schema:
-          type: string
-          nullable: true
-      - name: executed-by
-        in: query
-        description: Executor of the action after approval to filter the audits
-        schema:
-          type: string
-          nullable: true
-      responses:
-        "200":
-          description: Ok
-          content:
-            application/octet-stream:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/AuditEvent'
-        "400":
-          description: BadRequest
+        '403':
+          description: Forbidden
           content:
             application/json:
               schema:
-                oneOf:
-                - $ref: '#/components/schemas/ErrorDetails'
-                - $ref: '#/components/schemas/ErrorPayload'
-        "500":
+                $ref: '#/components/schemas/ErrorDetails'
+        '404':
+          description: NotFound
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
+        '500':
           description: InternalServerError
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorDetails'
-        "403":
+  /audits:
+    get:
+      summary: >-
+        Get all the audits of the workflows in the organization based on the
+        filters.
+      operationId: getAudits
+      parameters:
+        - name: orgId
+          in: query
+          description: Organization ID
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Maximum number of audits to return
+          schema:
+            type: integer
+            format: int64
+            default: 20
+        - name: offset
+          in: query
+          description: Offset to start returning audits
+          schema:
+            type: integer
+            format: int64
+            default: 0
+        - name: wkfDefinitionId
+          in: query
+          description: Workflow definition ID (Choreo Operation) to filter the audits
+          schema:
+            type: string
+            nullable: true
+        - name: status
+          in: query
+          description: Status to filter the audits
+          schema:
+            type: string
+            nullable: true
+        - name: resource
+          in: query
+          description: Resource Id to filter the audits
+          schema:
+            type: string
+            nullable: true
+        - name: event-type
+          in: query
+          description: Audit event type to filter the audits
+          schema:
+            nullable: true
+            allOf:
+              - $ref: '#/components/schemas/AuditEventType'
+        - name: user-id
+          in: query
+          description: >-
+            User ID to filter the audits (email of user who performed the
+            action)
+          schema:
+            type: string
+            nullable: true
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AuditEvent'
+        '400':
+          description: BadRequest
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorDetails'
+                  - $ref: '#/components/schemas/ErrorPayload'
+        '403':
           description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
+        '500':
+          description: InternalServerError
           content:
             application/json:
               schema:
@@ -562,84 +613,114 @@ paths:
       summary: Get all the audits of a specific workflow run.
       operationId: getAuditsWorkflowInstanceId
       parameters:
-      - name: workflow-instance-id
-        in: path
-        description: Identifier of the workflow instance
-        required: true
-        schema:
-          type: string
+        - name: workflow-instance-id
+          in: path
+          description: Identifier of the workflow instance
+          required: true
+          schema:
+            type: string
       responses:
-        "200":
+        '200':
           description: Ok
           content:
-            application/octet-stream:
+            application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/AuditEvent'
-        "400":
+        '400':
           description: BadRequest
           content:
             application/json:
               schema:
                 oneOf:
-                - $ref: '#/components/schemas/ErrorDetails'
-                - $ref: '#/components/schemas/ErrorPayload'
-        "500":
-          description: InternalServerError
+                  - $ref: '#/components/schemas/ErrorDetails'
+                  - $ref: '#/components/schemas/ErrorPayload'
+        '403':
+          description: Forbidden
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorDetails'
-        "403":
-          description: Forbidden
+        '500':
+          description: InternalServerError
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorDetails'
 components:
   schemas:
-    ActionOnResource:
-      type: string
-      enum:
-      - UPDATE
-      - DELETE
-      - CREATE
     ApproverType:
       type: string
       enum:
-      - USER
-      - ROLE
+        - USER
+        - ROLE
     AuditEvent:
       type: object
       allOf:
-      - $ref: '#/components/schemas/WorkflowInstance'
-      - required:
-        - WorkflowConfig
+        - $ref: '#/components/schemas/AuditEventRequest'
+        - required:
+            - id
+            - workflowDefinition
+          type: object
+          properties:
+            id:
+              type: string
+            workflowDefinition:
+              required:
+                - description
+                - id
+                - name
+              type: object
+              properties:
+                id:
+                  type: string
+                name:
+                  type: string
+                description:
+                  type: string
+              additionalProperties: false
+          additionalProperties: false
+    AuditEventRequest:
+      required:
         - eventType
-        - time
+        - orgId
+        - resource
+        - timestamp
         - user
-        type: object
-        properties:
-          eventType:
-            $ref: '#/components/schemas/AuditEventType'
-          time:
-            type: string
-          user:
-            type: string
-        additionalProperties: false
+        - workflowDefinitionId
+        - workflowInstanceId
+      type: object
+      properties:
+        orgId:
+          type: string
+        timestamp:
+          $ref: '#/components/schemas/Utc'
+        eventType:
+          $ref: '#/components/schemas/AuditEventType'
+        user:
+          type: string
+        resource:
+          type: string
+        workflowInstanceId:
+          type: string
+        comment:
+          type: string
+        workflowDefinitionId:
+          type: string
+      additionalProperties: false
     AuditEventType:
       type: string
       enum:
-      - CANCEL
-      - EXECUTE
-      - REJECT
-      - APPROVE
-      - REQUEST
+        - CANCEL
+        - EXECUTE
+        - REJECT
+        - APPROVE
+        - REQUEST
     ErrorDetails:
       required:
-      - details
-      - error
+        - details
+        - error
       type: object
       properties:
         error:
@@ -649,12 +730,12 @@ components:
       additionalProperties: false
     ErrorPayload:
       required:
-      - message
-      - method
-      - path
-      - reason
-      - status
-      - timestamp
+        - message
+        - method
+        - path
+        - reason
+        - status
+        - timestamp
       type: object
       properties:
         timestamp:
@@ -672,9 +753,9 @@ components:
           type: string
     FormatSchemaEntry:
       required:
-      - dataType
-      - displayName
-      - extractfrom
+        - dataType
+        - displayName
+        - extractfrom
       type: object
       properties:
         displayName:
@@ -688,16 +769,32 @@ components:
         Schema instruction on how to format input data field to form
         data for the workflow
     OrgWorkflowConfig:
+      type: object
+      description: >-
+        Organizational configuration of a workflow definition.
+
+        A workflow instance is created within the org based on this
+        configuration.
+      allOf:
+        - $ref: '#/components/schemas/OrgWorkflowConfigRequest'
+        - required:
+            - id
+            - orgId
+          type: object
+          properties:
+            id:
+              type: string
+            orgId:
+              type: string
+          additionalProperties: false
+    OrgWorkflowConfigRequest:
       required:
-      - assigneeRoles
-      - assignees
-      - orgId
-      - workflow
+        - assigneeRoles
+        - assignees
+        - workflowDefinitionId
       type: object
       properties:
-        workflow:
-          $ref: '#/components/schemas/WorkflowDefinition'
-        orgId:
+        workflowDefinitionId:
           type: string
         assigneeRoles:
           type: array
@@ -709,20 +806,19 @@ components:
             type: string
         formatRequestData:
           type: boolean
+          default: true
         externalWorkflowEngineEndpoint:
           type: string
       additionalProperties: false
-      description: |-
-        Workflow configuration for an action. This defines the configuration of the workflow.
-        A workflow instance is created based on the configuration.
+      description: Request to configure a workflow definition for an organization.
     ReviewerDecision:
       type: string
       enum:
-      - APPROVED
-      - REJECTED
+        - APPROVED
+        - REJECTED
     ReviewerDecisionRequest:
       required:
-      - decision
+        - decision
       type: object
       properties:
         reviewedBy:
@@ -732,31 +828,60 @@ components:
         reviewComment:
           type: string
       additionalProperties: false
+    Utc:
+      type: array
+      items:
+        oneOf:
+          - type: integer
+            format: int64
+          - type: number
+            format: double
     WorkflowContext:
       required:
-      - action
-      - resource
-      - workflowDefinitionIdentifier
+        - resource
+        - workflowDefinitionIdentifier
       type: object
       properties:
         workflowDefinitionIdentifier:
           type: string
         resource:
           type: string
-        action:
-          $ref: '#/components/schemas/ActionOnResource'
       additionalProperties: false
-      description: Context of the workflow. This is used to identify the workflow
-        instance uniquely within the org.
+      description: >-
+        Context of the workflow. This is used to identify the workflow instance
+        uniquely within the org.
     WorkflowDefinition:
+      type: object
+      description: >-
+        Workflow definition for an action. This defines the behavior of the
+        workflow
+      allOf:
+        - $ref: '#/components/schemas/WorkflowDefinitionIdentifier'
+        - required:
+            - allowParallelRequests
+            - approverTypes
+            - executeUponApproval
+            - requestFormatSchema
+          type: object
+          properties:
+            approverTypes:
+              type: array
+              items:
+                $ref: '#/components/schemas/ApproverType'
+            executeUponApproval:
+              type: boolean
+            allowParallelRequests:
+              type: boolean
+            requestFormatSchema:
+              type: object
+              additionalProperties:
+                $ref: '#/components/schemas/FormatSchemaEntry'
+          additionalProperties: false
+    WorkflowDefinitionIdentifier:
       required:
-      - allowParallelRequests
-      - approverTypes
-      - description
-      - executeUponApproval
-      - id
-      - name
-      - requestFormatSchema
+        - description
+        - id
+        - name
       type: object
       properties:
         id:
@@ -765,55 +890,17 @@ components:
           type: string
         description:
           type: string
-        approverTypes:
-          type: array
-          items:
-            $ref: '#/components/schemas/ApproverType'
-        executeUponApproval:
-          type: boolean
-        allowParallelRequests:
-          type: boolean
-        requestFormatSchema:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/FormatSchemaEntry'
       additionalProperties: false
-      description: Workflow definition for an action. This defines the behavior of
-        the workflow
-    WorkflowInstance:
-      type: object
-      allOf:
-      - $ref: '#/components/schemas/WorkflowInstanceCreateRequest'
-      - required:
-        - config
-        - createdTime
-        - id
-        - orgId
-        type: object
-        properties:
-          id:
-            type: string
-          orgId:
-            type: string
-          createdTime:
-            type: string
-          config:
-            $ref: '#/components/schemas/OrgWorkflowConfig'
-          reviewerDecision:
-            $ref: '#/components/schemas/ReviewerDecisionRequest'
-          status:
-            $ref: '#/components/schemas/WorkflowInstanceStatus'
-        additionalProperties: false
     WorkflowInstanceCreateRequest:
       required:
-      - context
-      - data
-      - requestedBy
+        - context
+        - createdBy
+        - data
       type: object
       properties:
         context:
           $ref: '#/components/schemas/WorkflowContext'
-        requestedBy:
+        createdBy:
           type: string
         requestComment:
           type: string
@@ -821,13 +908,38 @@ components:
           type: object
       additionalProperties: false
       description: Request to create a workflow instance
-    WorkflowInstanceStatus:
+    WorkflowInstanceResponse:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/WorkflowInstanceCreateRequest'
+        - required:
+            - createdTime
+            - orgId
+            - wkfId
+            - workflowDefinitionIdentifier
+          type: object
+          properties:
+            wkfId:
+              type: string
+            orgId:
+              type: string
+            createdTime:
+              $ref: '#/components/schemas/Utc'
+            workflowDefinitionIdentifier:
+              $ref: '#/components/schemas/WorkflowDefinitionIdentifier'
+            reviewerDecision:
+              $ref: '#/components/schemas/ReviewerDecisionRequest'
+            status:
+              $ref: '#/components/schemas/WorkflowMgtStatus'
+          additionalProperties: false
+    WorkflowMgtStatus:
       type: string
+      description: Status of a workflow definition (Choreo operation) within the org
       enum:
-      - CANCELLED
-      - TIMEOUT
-      - NOT_FOUND
-      - REJECTED
-      - APPROVED
-      - PENDING
-      - DISABLED
+        - CANCELLED
+        - TIMEOUT
+        - NOT_FOUND
+        - REJECTED
+        - APPROVED
+        - PENDING
+        - DISABLED

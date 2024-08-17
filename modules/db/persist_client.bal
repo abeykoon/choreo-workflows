@@ -33,7 +33,7 @@ public isolated client class Client {
                 approverTypes: {columnName: "approver_types"},
                 executeUponApproval: {columnName: "execute_upon_approval"},
                 allowParallelRequests: {columnName: "allow_parallel_requests"},
-                requestFormatSchema: {columnName: "requestFormatSchema"},
+                requestFormatSchema: {columnName: "request_format_schema"},
                 "orgworkflowconfigs[].id": {relation: {entityName: "orgworkflowconfigs", refField: "id"}},
                 "orgworkflowconfigs[].orgId": {relation: {entityName: "orgworkflowconfigs", refField: "orgId", refColumn: "org_id"}},
                 "orgworkflowconfigs[].assigneeRoles": {relation: {entityName: "orgworkflowconfigs", refField: "assigneeRoles", refColumn: "assignee_roles"}},
@@ -71,7 +71,7 @@ public isolated client class Client {
                 eventType: {columnName: "event_type"},
                 timestamp: {columnName: "timestamp"},
                 userId: {columnName: "user_id"},
-                action: {columnName: "action"},
+                workflowDefinitionId: {columnName: "workflow_definition_id"},
                 'resource: {columnName: "resource"},
                 workflowInstanceId: {columnName: "workflow_instance_id"},
                 comment: {columnName: "comment"}
@@ -109,7 +109,7 @@ public isolated client class Client {
                 "workflowDefinition.approverTypes": {relation: {entityName: "workflowDefinition", refField: "approverTypes", refColumn: "approver_types"}},
                 "workflowDefinition.executeUponApproval": {relation: {entityName: "workflowDefinition", refField: "executeUponApproval", refColumn: "execute_upon_approval"}},
                 "workflowDefinition.allowParallelRequests": {relation: {entityName: "workflowDefinition", refField: "allowParallelRequests", refColumn: "allow_parallel_requests"}},
-                "workflowDefinition.requestFormatSchema": {relation: {entityName: "workflowDefinition", refField: "requestFormatSchema"}}
+                "workflowDefinition.requestFormatSchema": {relation: {entityName: "workflowDefinition", refField: "requestFormatSchema", refColumn: "request_format_schema"}}
             },
             keyFields: ["id"],
             joinMetadata: {
@@ -134,7 +134,7 @@ public isolated client class Client {
                 "workflowdefinition.approverTypes": {relation: {entityName: "workflowdefinition", refField: "approverTypes", refColumn: "approver_types"}},
                 "workflowdefinition.executeUponApproval": {relation: {entityName: "workflowdefinition", refField: "executeUponApproval", refColumn: "execute_upon_approval"}},
                 "workflowdefinition.allowParallelRequests": {relation: {entityName: "workflowdefinition", refField: "allowParallelRequests", refColumn: "allow_parallel_requests"}},
-                "workflowdefinition.requestFormatSchema": {relation: {entityName: "workflowdefinition", refField: "requestFormatSchema"}},
+                "workflowdefinition.requestFormatSchema": {relation: {entityName: "workflowdefinition", refField: "requestFormatSchema", refColumn: "request_format_schema"}},
                 "workflowinstances[].id": {relation: {entityName: "workflowinstances", refField: "id"}},
                 "workflowinstances[].orgId": {relation: {entityName: "workflowinstances", refField: "orgId", refColumn: "org_id"}},
                 "workflowinstances[].resource": {relation: {entityName: "workflowinstances", refField: "resource"}},

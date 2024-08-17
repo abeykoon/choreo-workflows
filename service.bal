@@ -80,13 +80,26 @@ service http:Service /workflow\-mgt/v1 on httpListener {
     # + ctx - request context
     # + workflowConfigRequest - parameter description
     # + return - configured workflow
-    resource function post workflow/configs(http:RequestContext ctx, types:OrgWorkflowConfigRequest workflowConfigRequest) returns types:OrgWorkflowConfig
-            |util:BadRequest|util:InternalServerError|util:Forbidden {
+    resource function post workflow/configs(http:RequestContext ctx, types:OrgWorkflowConfigRequest workflowConfigRequest) returns types:OrgWorkflowConfig|util:BadRequest|util:InternalServerError|util:Forbidden|util:Conflict {
         util:Context context = util:getContext(ctx);
         do {
+            types:OrgWorkflowConfig workflowConfigByOrgAndDefinition = check db:getWorkflowConfigByOrgAndDefinition(context,
+                     workflowConfigRequest.workflowDefinitionId);
+            if workflowConfigByOrgAndDefinition is types:OrgWorkflowConfig {
+                check error err:ConflitError("Workflow definition is already configured within the organization");
+            }
             return check db:persistWorkflowConfig(context, workflowConfigRequest);
         } on fail error e {
             util:logError(context, "Error occurred while configuring workflow", e);
+            if e is err:ConflitError {
+                util:Conflict httpErr = {
+                    body: {
+                        "error": "Conflict",
+                        "details": e.message()
+                    }
+                };
+                return httpErr;
+            }
             util:InternalServerError httpErr = {
                 body: {
                     "error": "Internal Server Error",
@@ -420,7 +433,7 @@ service http:Service /workflow\-mgt/v1 on httpListener {
                 check error err:AuthenticationError(errorMsg);
             }
             json data = check db:getWorkflowInstanceData(context, workflow\-instance\-id);
-            return check formatDataForReviewer(workflow\-instance\-id, wkfInstance.data);
+            return check formatDataForReviewer(workflow\-instance\-id, data);
         } on fail error e {
             util:logError(context, string `Error occurred while getting review data for workflow instance with id ${workflow\-instance\-id}`, e);
             if e is err:AuthenticationError {

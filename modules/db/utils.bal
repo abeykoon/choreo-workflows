@@ -21,6 +21,8 @@ public isolated function stringArrayToString(string[] arr) returns string {
     foreach string item in arr {
         result = result + item + ",";
     }
+    // Remove the trailing comma
+    result = result.substring(0, result.length() - 1);
     return result;
 }
 

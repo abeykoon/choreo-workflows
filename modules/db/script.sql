@@ -15,7 +15,7 @@ CREATE TABLE "workflow_definition" (
 	"approver_types" VARCHAR(255) NOT NULL,
 	"execute_upon_approval" BOOLEAN NOT NULL,
 	"allow_parallel_requests" BOOLEAN NOT NULL,
-	"requestFormatSchema" VARCHAR(191) NOT NULL,
+	"request_format_schema" VARCHAR(191) NOT NULL,
 	PRIMARY KEY("id")
 );
 
@@ -25,7 +25,7 @@ CREATE TABLE "audit_event" (
 	"event_type" VARCHAR(50) NOT NULL,
 	"timestamp" TIMESTAMP NOT NULL,
 	"user_id" VARCHAR(255) NOT NULL,
-	"action" VARCHAR(255) NOT NULL,
+	"workflow_definition_id" VARCHAR(255) NOT NULL,
 	"resource" VARCHAR(255) NOT NULL,
 	"workflow_instance_id" VARCHAR(255) NOT NULL,
 	"comment" VARCHAR(191),
@@ -59,7 +59,9 @@ CREATE TABLE "workflow_instance" (
 	"review_time" TIMESTAMP,
 	"org_workflow_config_id" VARCHAR(255) NOT NULL,
 	FOREIGN KEY("org_workflow_config_id") REFERENCES "org_workflow_config"("id"),
-	"workflow_definition_id" VARCHAR(255) NOT NULL,
-	FOREIGN KEY("workflow_definition_id") REFERENCES "workflow_definition"("id"),
+	"workflowDefinitionId" VARCHAR(255) NOT NULL,
+	FOREIGN KEY("workflowDefinitionId") REFERENCES "workflow_definition"("id"),
 	PRIMARY KEY("id")
 );
+
+

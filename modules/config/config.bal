@@ -1,6 +1,6 @@
 
 // Ports
-public configurable int servicePort = 9080;
+public configurable int servicePort = 9050;
 public configurable int healthPort = 9082;
 
 // Database configurations

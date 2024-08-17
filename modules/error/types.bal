@@ -26,4 +26,4 @@ public type AuthenticationError distinct Error;
 
 public type DatabaseError distinct Error;
 
-public type CdnError distinct Error;
+public type ConflitError distinct Error;
