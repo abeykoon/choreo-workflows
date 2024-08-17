@@ -21,6 +21,7 @@ public const ORGANIZATION_HANDLE = "orgHandle";
 public const ORG_ID_QUERY_PARAM = "orgId";
 
 public const ORG_KEY_IN_JWT = "organization";
+public const IDP_CLAIMS_KEY_IN_JWT = "idp_claims";
 public const JWT_HEADER = "x-jwt-assertion";
 
 public const USER_ID = "";

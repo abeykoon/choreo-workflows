@@ -31,7 +31,14 @@ listener http:Listener httpListener = new (config:servicePort, config = {
 
 util:InternalServerError internalError = {body: {'error: "Not implemented", details: "This feature is not implemented yet."}};
 
-service http:Service /workflow\-mgt/v1 on httpListener {
+service http:InterceptableService /workflow\-mgt/v1 on httpListener {
+
+    # Creates request interceptor that intercepts every request to the service.
+    # + return - return the created interceptor
+    public function createInterceptors() returns RequestPreProcessor {
+        return new RequestPreProcessor();
+    }
+
 
     # Get all the workflow definitions defined in Choreo.
     #
@@ -83,11 +90,18 @@ service http:Service /workflow\-mgt/v1 on httpListener {
     resource function post workflow/configs(http:RequestContext ctx, types:OrgWorkflowConfigRequest workflowConfigRequest) returns types:OrgWorkflowConfig|util:BadRequest|util:InternalServerError|util:Forbidden|util:Conflict {
         util:Context context = util:getContext(ctx);
         do {
-            types:OrgWorkflowConfig workflowConfigByOrgAndDefinition = check db:getWorkflowConfigByOrgAndDefinition(context,
+            types:OrgWorkflowConfig| error workflowConfigByOrgAndDefinition =  db:getWorkflowConfigByOrgAndDefinition(context,
                      workflowConfigRequest.workflowDefinitionId);
             if workflowConfigByOrgAndDefinition is types:OrgWorkflowConfig {
                 check error err:ConflitError("Workflow definition is already configured within the organization");
+            } else {
+                if workflowConfigByOrgAndDefinition is err:ResourceNotFoundError {
+                    //ignore - this should happen if the workflow is not configured
+                } else {
+                    check error err:ProcessingError("Error while checking if workflow definition is already configured within the organization");
+                }
             }
+
             return check db:persistWorkflowConfig(context, workflowConfigRequest);
         } on fail error e {
             util:logError(context, "Error occurred while configuring workflow", e);
