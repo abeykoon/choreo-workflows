@@ -29,7 +29,8 @@ public isolated function getWorkflowInstances(util:Context context, int 'limit,
         int offset, string? wkfDefinition, string? status,
         string? 'resource, string? createdBy) returns types:WorkflowInstanceResponse[]|error {
 
-     stream<db:AnnotatedWkfInstanceWithRelations, persist:Error?> dbInstances = check db:searchWorkflowInstances(context, 'limit, offset, wkfDefinition, status, 'resource, createdBy);
+     stream<db:AnnotatedWkfInstanceWithRelations, persist:Error?> dbInstances = check
+            db:searchWorkflowInstances(context, 'limit, offset, wkfDefinition, status, 'resource, createdBy);
      return check filterWorkflowInstancesByUser(context, dbInstances);
 }
 

@@ -42,7 +42,7 @@ public type AuditEvent record {|
     string 'resource;
     @sql:Name {value: "workflow_instance_id"}
     @sql:Varchar {length: 255}
-    string? workflowInstanceId;
+    string workflowInstanceId;
     string? comment;
 |};
 

@@ -136,6 +136,9 @@ public isolated function getWorkflowConfigById(util:Context context, string work
     } on fail error e {
         string message = "Error while retrieving workflow configuration from the database";
         util:logError(context, message, e);
+        if (e is persist:NotFoundError) {
+            return error error:ResourceNotFoundError(string `Workflow configuration not found for the given id: ${workflowConfigId}`);
+        }
         return error error:DatabaseError(message, e, workflowConfigId = workflowConfigId);
     }
 }
@@ -191,6 +194,7 @@ public isolated function getWorkflowConfigsForOrg(util:Context context) returns 
             };
             wkfConfigs.push(wkfConfig);
         }
+        return wkfConfigs;
     } on fail error e {
         string message = "Error while retrieving workflow configurations from the database";
         util:logError(context, message, e);
@@ -251,17 +255,45 @@ public isolated function deleteWorkflowConfigById(util:Context context, string w
 //For UI
 
 public isolated function searchWorkflowInstances(util:Context context, int 'limit,
-        int offset, string wkfDefinition, string status,
-        string 'resource, string createdBy) returns stream<AnnotatedWkfInstanceWithRelations, persist:Error?>|error {
+        int offset, string? wkfDefinition, string? status,
+        string? 'resource, string? createdBy) returns stream<AnnotatedWkfInstanceWithRelations, persist:Error?>|error {
     do {
-            //filter by orgId and user also
-            //with pagination
-            //Filter by org
-            //Sort by created time
-            //Join with workflow definition
-            sql:ParameterizedQuery selectQuery = `SELECT wi.id, wi.org_id, wi.resource, wi.created_by, wi.created_time, wi.request_comment, wi.status, wi.reviewed_by, wi.reviewer_decision, wi.review_comment, wi.review_time, wi.org_workflow_config_id, wd.id, wd.name, wd.description, wc.assignee_roles, wc.assignees, wc.format_request_data, wc.external_workflow_engine_endpoint FROM workflow_instance wi JOIN workflow_definition wd ON wi.workflow_definition_id = wd.id JOIN org_workflow_config wc ON wi.org_workflow_config_id = wc.id WHERE wi.org_id = ${context.orgId} and wi.created_by = ${createdBy} and wi.resource = ${'resource} and wi.workflow_definition_id = ${wkfDefinition} and wi.status = ${status} ORDER BY wi.created_time OFFSET ${offset} ROW FETCH FIRST ${'limit} ROWS ONLY`;
-            stream<AnnotatedWkfInstanceWithRelations, persist:Error?> resultStream = dbClient->queryNativeSQL(selectQuery);
+            // Start with the base query
+            sql:ParameterizedQuery baseQuery = `SELECT wi.id, wi.org_id, wi.resource, wi.created_by, wi.created_time, wi.request_comment, wi.status, wi.reviewed_by, wi.reviewer_decision, wi.review_comment, wi.review_time, wi.org_workflow_config_id, wd.id, wd.name, wd.description, wc.assignee_roles, wc.assignees, wc.format_request_data, wc.external_workflow_engine_endpoint " +
+                       "FROM workflow_instance wi " +
+                       "JOIN workflow_definition wd ON wi.workflow_definition_id = wd.id " +
+                       "JOIN org_workflow_config wc ON wi.org_workflow_config_id = wc.id " +
+                       "WHERE wi.org_id = ${context.orgId}`;
+
+            // Create an empty list to hold additional query fragments
+            sql:ParameterizedQuery[] queryFragments = [];
+
+            // Add conditions based on the provided parameters
+            if createdBy is string {
+                queryFragments.push(` AND wi.created_by = ${createdBy}`);
+            }
+
+            if 'resource is string {
+                queryFragments.push(` AND wi.resource = ${'resource}`);
+            }
+
+            if wkfDefinition is string {
+                queryFragments.push(` AND wi.workflow_definition_id = ${wkfDefinition}`);
+            }
+
+            if status is string {
+                queryFragments.push(` AND wi.status = ${status}`);
+            }
+
+            // Finalize the query by adding ORDER BY, OFFSET, and LIMIT clauses
+            sql:ParameterizedQuery orderLimitQuery = ` ORDER BY wi.created_time OFFSET ${offset} ROW FETCH FIRST ${'limit} ROW ONLY`;
+
+            // Concatenate all the fragments with the base query
+            sql:ParameterizedQuery finalQuery = sql:queryConcat(sql:queryConcat(baseQuery, ...queryFragments), orderLimitQuery);
+
+            stream<AnnotatedWkfInstanceWithRelations, persist:Error?> resultStream = dbClient->queryNativeSQL(finalQuery);
             return resultStream;
+
     } on fail error e {
         string message = "Error while retrieving workflow instances from the database";
         util:logError(context, message, e);
@@ -297,6 +329,9 @@ public isolated function getWorkflowInstanceById(util:Context context, string wo
     } on fail error e {
         string message = "Error while retrieving workflow instance from the database";
         util:logError(context, message, e);
+        if (e is persist:NotFoundError) {
+            return error error:ResourceNotFoundError(string `Workflow instance not found for the given id: ${workflowInstanceId}`);
+        }
         return error error:DatabaseError(message, e, workflowInstanceId = workflowInstanceId);
     }
 }
@@ -497,12 +532,45 @@ public isolated function persistAuditEvent(util:Context context, types:AuditEven
 }
 
 //search audit events
-public isolated function searchAuditEvents(util:Context context, int 'limit, int offset, string wkfDefinitionId, string status, string 'resource, string eventType, string userId) returns types:AuditEvent[]|error {
+public isolated function searchAuditEvents(util:Context context, int 'limit, int offset, string? wkfDefinitionId, string? status, string? 'resource, string? eventType, string? userId) returns types:AuditEvent[]|error {
     do {
+        // Start with the base query
+        sql:ParameterizedQuery baseQuery = `SELECT ae.id, ae.org_id, ae.event_type, ae.timestamp, ae.user_id, ae.resource, ae.workflow_instance_id, ae.comment, wd.id, wd.name, wd.description
+                                            FROM audit_event ae
+                                            JOIN workflow_definition wd ON ae.workflow_definition_id = wd.id
+                                            WHERE ae.org_id = ${context.orgId}`;
 
-        sql:ParameterizedQuery selectQuery = `SELECT ae.id, ae.org_id, ae.event_type, ae.timestamp, ae.user_id, ae.resource, ae.workflow_instance_id, ae.comment, wd.id, wd.name, wd.description FROM audit_event ae JOIN workflow_definition wd ON ae.workflow_definition_id = wd.id WHERE ae.org_id = ${context.orgId} and ae.action = ${wkfDefinitionId} and ae.status = ${status} and ae.resource = ${'resource} and ae.event_type = ${eventType} and ae.user_id = ${userId} ORDER BY ae.timestamp OFFSET ${offset} ROW FETCH FIRST ${'limit} ROWS ONLY`;
+        // Create an empty list to hold additional query fragments
+        sql:ParameterizedQuery[] queryFragments = [];
 
-        stream<AuditEventWithRelations, persist:Error?> resultStream = dbClient->queryNativeSQL(selectQuery);
+        // Add conditions based on the provided parameters
+        if wkfDefinitionId is string {
+            queryFragments.push(` AND ae.workflow_definition_id = ${wkfDefinitionId}`);
+        }
+
+        if status is string {
+            queryFragments.push(` AND ae.status = ${status}`);
+        }
+
+        if 'resource is string {
+            queryFragments.push(` AND ae.resource = ${'resource}`);
+        }
+
+        if eventType is string {
+            queryFragments.push(` AND ae.event_type = ${eventType}`);
+        }
+
+        if userId is string {
+            queryFragments.push(` AND ae.user_id = ${userId}`);
+        }
+
+        // Finalize the query by adding ORDER BY, OFFSET, and LIMIT clauses
+        sql:ParameterizedQuery orderLimitQuery = ` ORDER BY ae.timestamp OFFSET ${offset} ROW FETCH FIRST ${'limit} ROW ONLY`;
+
+        // Concatenate all the fragments with the base query
+        sql:ParameterizedQuery finalQuery = sql:queryConcat(sql:queryConcat(baseQuery, ...queryFragments),orderLimitQuery);
+
+        stream<AuditEventWithRelations, persist:Error?> resultStream = dbClient->queryNativeSQL(finalQuery);
         types:AuditEvent[] auditEvents = [];
         check from AuditEventWithRelations auditEvent in resultStream
         do {
@@ -531,5 +599,42 @@ public isolated function searchAuditEvents(util:Context context, int 'limit, int
             return error error:ResourceNotFoundError("Audit events not found for the given search criteria");
         }
         return error error:DatabaseError(message, e);
+    }
+}
+
+public isolated function getAuditEventsByWorkflowInstanceId(util:Context context, string workflowInstanceId) returns types:AuditEvent[]|error {
+    do {
+        AuditEvent[] auditEventsForWkfInstance = check from AuditEvent auditEvent in dbClient->/auditevents(AuditEvent)
+                            where auditEvent.workflowInstanceId == workflowInstanceId
+                            select auditEvent;
+
+        types:AuditEvent[] auditEvents = [];
+        foreach AuditEvent auditEvent in auditEventsForWkfInstance {
+            types:AuditEvent event = {
+                id: auditEvent.id,
+                orgId: auditEvent.orgId,
+                timestamp: auditEvent.timestamp,
+                eventType: check auditEvent.eventType.cloneWithType(),
+                user: auditEvent.userId,
+                'resource: auditEvent.'resource,
+                workflowInstanceId: auditEvent.workflowInstanceId,
+                comment: auditEvent.comment,
+                workflowDefinition: {   //TODO: fix this (merge tables and get)
+                    id: auditEvent.workflowDefinitionId,
+                    name: "",
+                    description: ""
+                }
+            };
+            auditEvents.push(event);
+        }
+        return auditEvents;
+
+    } on fail error e {
+        string message = string `Error while retrieving audit events for workflow instance: ${workflowInstanceId}`;
+        util:logError(context, message, e);
+        if (e is persist:NotFoundError) {
+            return error error:ResourceNotFoundError(string `Audit events not found for the given workflow instance: ${workflowInstanceId}`);
+        }
+        return error error:DatabaseError(message, e, workflowInstanceId = workflowInstanceId);
     }
 }

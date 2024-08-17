@@ -162,6 +162,15 @@ service http:Service /workflow\-mgt/v1 on httpListener {
                 };
                 return httpErr;
             }
+            if e is err:ResourceNotFoundError {
+                util:ResourceNotFound httpErr = {
+                    body: {
+                        "error": "Resource Not Found",
+                        "details": string `Workflow configuration with id ${workflow\-config\-id} not found`
+                    }
+                };
+                return httpErr;
+            }
             util:InternalServerError httpErr = {
                 body: {
                     "error": "Internal Server Error",
@@ -220,8 +229,18 @@ service http:Service /workflow\-mgt/v1 on httpListener {
                 string errorMsg = string `workflow instance with id ${workflow\-instance\-id} does not belong to the organization`;
                 check error err:AuthenticationError(errorMsg);
             }
+            return wkfInstance;
         } on fail error e {
             util:logError(context, "Error occurred while getting workflow instance", e);
+            if e is err:AuthenticationError {
+                util:Forbidden httpErr = {
+                    body: {
+                        "error": "Forbidden",
+                        "details": e.message()
+                    }
+                };
+                return httpErr;
+            }
             if e is err:ResourceNotFoundError {
                 util:ResourceNotFound httpErr = {
                     body: {
@@ -280,6 +299,15 @@ service http:Service /workflow\-mgt/v1 on httpListener {
             return check db:deleteWorkflowInstance(context, workflow\-instance\-id);
         } on fail error e {
             util:logError(context, "Error occurred while deleting workflow instance", e);
+            if e is err:AuthenticationError {
+                util:Forbidden httpErr = {
+                    body: {
+                        "error": "Forbidden",
+                        "details": e.message()
+                    }
+                };
+                return httpErr;
+            }
             if e is err:ResourceNotFoundError {
                 util:ResourceNotFound httpErr = {
                     body: {
@@ -344,6 +372,15 @@ service http:Service /workflow\-mgt/v1 on httpListener {
             return check db:updateWorkflowInstanceWithReviewerDecision(context, workflow\-instance\-id, review);
         } on fail error e {
             util:logError(context, string`Error occurred while reviewing workflow instance with id ${workflow\-instance\-id}`, e);
+            if e is err:AuthenticationError {
+                util:Forbidden httpErr = {
+                    body: {
+                        "error": "Forbidden",
+                        "details": e.message()
+                    }
+                };
+                return httpErr;
+            }
             if e is err:ResourceNotFoundError {
                 util:ResourceNotFound httpErr = {
                     body: {
@@ -386,6 +423,15 @@ service http:Service /workflow\-mgt/v1 on httpListener {
             return check formatDataForReviewer(workflow\-instance\-id, wkfInstance.data);
         } on fail error e {
             util:logError(context, string `Error occurred while getting review data for workflow instance with id ${workflow\-instance\-id}`, e);
+            if e is err:AuthenticationError {
+                util:Forbidden httpErr = {
+                    body: {
+                        "error": "Forbidden",
+                        "details": e.message()
+                    }
+                };
+                return httpErr;
+            }
             if e is err:ResourceNotFoundError {
                 util:ResourceNotFound httpErr = {
                     body: {
@@ -411,12 +457,11 @@ service http:Service /workflow\-mgt/v1 on httpListener {
     # + orgId - Organization ID
     # + 'limit - Maximum number of audits to return
     # + offset - Offset to start returning audits
-    # + action - Action to filter the audits
+    # + wkfDefinitionId - Workflow definition ID (Choreo Operation) to filter the audits
     # + status - Status to filter the audits
-    # + 'resource - Resource to filter the audits
-    # + requested\-by - Requested user to filter the audits
-    # + reviwed\-by - Reviewer to filter the audits
-    # + executed\-by - Executor of the action after approval to filter the audits
+    # + 'resource - Resource Id to filter the audits
+    # + event\-type - Audit event type to filter the audits
+    # + user\-id - User ID to filter the audits (email of user who performed the action)
     # + return - List of audit records
     resource function get audits(
             http:RequestContext ctx,
@@ -427,7 +472,7 @@ service http:Service /workflow\-mgt/v1 on httpListener {
             string? status = (),
             string? 'resource = (),
             types:AuditEventType? event\-type = (),
-            string? user\-id = (),
+            string? user\-id = ()
     ) returns types:AuditEvent[]|util:InternalServerError|util:Forbidden|util:BadRequest {
         //default sorting is by requested time
         util:Context context = util:getContext(ctx);
@@ -455,7 +500,37 @@ service http:Service /workflow\-mgt/v1 on httpListener {
     # + return - List of audits related to the workflow run
     resource function get audits/[string workflow\-instance\-id](http:RequestContext ctx) returns types:AuditEvent[]
             |util:InternalServerError|util:Forbidden|util:BadRequest {
-       //implement this
+        util:Context context = util:getContext(ctx);
+        do {
+            //ensure the workflow instance belongs to the org
+            types:WorkflowInstanceResponse wkfInstance = check db:getWorkflowInstanceResponseById(context, workflow\-instance\-id);
+            if !check ensureWkfInstanceBelongsToCorrectOrg(context, wkfInstance) {
+                string errorMsg = string `workflow instance with id ${workflow\-instance\-id} does not belong to the organization`;
+                check error err:AuthenticationError(errorMsg);
+            }
+            return check db:getAuditEventsByWorkflowInstanceId(context, workflow\-instance\-id);
+        } on fail error e {
+            util:logError(context, string `Error occurred while getting audits for workflow instance with id ${workflow\-instance\-id}`, e);
+            if e is err:AuthenticationError {
+                util:Forbidden httpErr = {
+                    body: {
+                        "error": "Forbidden",
+                        "details": e.message()
+                    }
+                };
+                return httpErr;
+            }
+            if e is err:ResourceNotFoundError {
+                return [];
+            }
+            util:InternalServerError httpErr = {
+                body: {
+                    "error": "Internal Server Error",
+                    "details": "Error while retrieving audits for workflow instance"
+                }
+            };
+            return httpErr;
+        }
     }
 
 }
