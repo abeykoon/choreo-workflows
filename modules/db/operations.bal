@@ -259,11 +259,11 @@ public isolated function searchWorkflowInstances(util:Context context, int 'limi
         string? 'resource, string? createdBy) returns stream<AnnotatedWkfInstanceWithRelations, persist:Error?>|error {
     do {
             // Start with the base query
-            sql:ParameterizedQuery baseQuery = `SELECT wi.id, wi.org_id, wi.resource, wi.created_by, wi.created_time, wi.request_comment, wi.status, wi.reviewed_by, wi.reviewer_decision, wi.review_comment, wi.review_time, wi.org_workflow_config_id, wd.id, wd.name, wd.description, wc.assignee_roles, wc.assignees, wc.format_request_data, wc.external_workflow_engine_endpoint " +
-                       "FROM workflow_instance wi " +
-                       "JOIN workflow_definition wd ON wi.workflow_definition_id = wd.id " +
-                       "JOIN org_workflow_config wc ON wi.org_workflow_config_id = wc.id " +
-                       "WHERE wi.org_id = ${context.orgId}`;
+            sql:ParameterizedQuery baseQuery = `SELECT wi.id, wi.org_id, wi.resource, wi.created_by, wi.created_time, wi.request_comment, wi.status, wi.reviewed_by, wi.reviewer_decision, wi.review_comment, wi.review_time, wi.org_workflow_config_id, wd.id, wd.name, wd.description, wc.assignee_roles, wc.assignees, wc.format_request_data, wc.external_workflow_engine_endpoint
+                       FROM workflow_instance wi
+                       JOIN workflow_definition wd ON wi.workflow_definition_id = wd.id
+                       JOIN org_workflow_config wc ON wi.org_workflow_config_id = wc.id
+                       WHERE wi.org_id = ${context.orgId}`;
 
             // Create an empty list to hold additional query fragments
             sql:ParameterizedQuery[] queryFragments = [];
@@ -317,13 +317,15 @@ public isolated function getWorkflowInstanceById(util:Context context, string wo
             },
             requestComment: dbWkfInstance.requestComment,
             orgWorkflowConfigId: dbWkfInstance.orgWorkflowConfigId,
-            reviewerDecision: {
+            status: check dbWkfInstance.status.cloneWithType()
+        };
+        if dbWkfInstance.reviewerDecision is string &&  dbWkfInstance.reviewerDecision != ""{
+            wkfInstance.reviewerDecision = {
                 reviewedBy: dbWkfInstance.reviewedBy,
                 decision: check dbWkfInstance.reviewerDecision.cloneWithType(),
                 reviewComment: dbWkfInstance.reviewComment
-            },
-            status: check dbWkfInstance.status.cloneWithType()
-        };
+            };
+        }
         return wkfInstance;
 
     } on fail error e {
@@ -354,13 +356,15 @@ public isolated function getWorkflowInstanceResponseById(util:Context context, s
                 description: dbWkfInstance.workflowDefinition.description
             },
             requestComment: dbWkfInstance.requestComment,
-            reviewerDecision: {
+            status: check dbWkfInstance.status.cloneWithType()
+        };
+        if dbWkfInstance.reviewerDecision is string &&  dbWkfInstance.reviewerDecision != "" {
+            wkfInstance.reviewerDecision = {
                 reviewedBy: dbWkfInstance.reviewedBy,
                 decision: check dbWkfInstance.reviewerDecision.cloneWithType(),
                 reviewComment: dbWkfInstance.reviewComment
-            },
-            status: check dbWkfInstance.status.cloneWithType()
-        };
+            };
+         }
         return wkfInstance;
 
     } on fail error e {
@@ -380,30 +384,36 @@ public isolated function persistWorkflowInstance(util:Context context, types:Wor
         time:Utc createdTime = time:utcNow();
 
         //find workflow config related to the operation in the organization
-        types:OrgWorkflowConfig orgWkfConfig = check getWorkflowConfigByOrgAndDefinition(context, wkfInstanceReq.context.workflowDefinitionIdentifier);
-
-        WorkflowInstanceInsert insertData = {
-            id: workflowInstanceUuid,
-            orgId: context.orgId,
-            createdBy: context.userId,
-            createdTime: createdTime,
-            requestComment: wkfInstanceReq.requestComment?: "",
-            data: wkfInstanceReq.data.toJsonString(),
-            status: types:PENDING,
-            reviewedBy: (),
-            reviewerDecision: (),
-            reviewComment: (),
-            reviewTime: (),
-            orgWorkflowConfigId: orgWkfConfig.id,
-            workflowDefinitionId: wkfInstanceReq.context.workflowDefinitionIdentifier,
-            'resource: wkfInstanceReq.context.'resource
-        };
-        string[] dbResult = check dbClient->/workflowinstances.post([insertData]);
-        if dbResult.length() == 1 {
-            return dbResult[0];
+        types:OrgWorkflowConfig|error orgWkfConfig =  getWorkflowConfigByOrgAndDefinition(context, wkfInstanceReq.context.workflowDefinitionIdentifier);
+        if orgWkfConfig is error:ResourceNotFoundError {
+            string message = string `No workflow configuration found in the org for the workflow definition: ${wkfInstanceReq.context.workflowDefinitionIdentifier}`;
+            return error error:DatabaseError(message, orgWkfConfig);
+        } else if orgWkfConfig is error {
+             return error error:DatabaseError("DB error occurred when retrieving workflow config related to the request", orgWkfConfig);
         } else {
-            string message = "Error while inserting workflow instance to the database";
-            return error error:DatabaseError(message, wkfInstanceId = workflowInstanceUuid);
+            WorkflowInstanceInsert insertData = {
+                id: workflowInstanceUuid,
+                orgId: context.orgId,
+                createdBy: context.userId,
+                createdTime: createdTime,
+                requestComment: wkfInstanceReq.requestComment?: "",
+                data: wkfInstanceReq.data.toJsonString(),
+                status: types:PENDING,
+                reviewedBy: (),
+                reviewerDecision: (),
+                reviewComment: (),
+                reviewTime: (),
+                orgWorkflowConfigId: orgWkfConfig.id,
+                workflowDefinitionId: wkfInstanceReq.context.workflowDefinitionIdentifier,
+                'resource: wkfInstanceReq.context.'resource
+            };
+            string[] dbResult = check dbClient->/workflowinstances.post([insertData]);
+            if dbResult.length() == 1 {
+                return dbResult[0];
+            } else {
+                string message = "Error while inserting workflow instance to the database";
+                return error error:DatabaseError(message, wkfInstanceId = workflowInstanceUuid);
+            }
         }
     } on fail error e {
         string message = "Error while inserting workflow instance to the database";
@@ -485,13 +495,15 @@ public isolated function getWorkflowInstance(util:Context context, string workfl
                 },
                 requestComment: dbWkfInstance.requestComment,
                 orgWorkflowConfigId: dbWkfInstance.orgWorkflowConfigId,
-                reviewerDecision: {
+                status: check dbWkfInstance.status.cloneWithType()
+            };
+            if dbWkfInstance.reviewerDecision is string &&  dbWkfInstance.reviewerDecision != "" {
+                wkfInstance.reviewerDecision = {
                     reviewedBy: dbWkfInstance.reviewedBy,
                     decision: check dbWkfInstance.reviewerDecision.cloneWithType(),
                     reviewComment: dbWkfInstance.reviewComment
-                },
-                status: check dbWkfInstance.status.cloneWithType()
-            };
+                };
+            }
             return wkfInstance;
         }
     } on fail error e {
@@ -536,9 +548,9 @@ public isolated function searchAuditEvents(util:Context context, int 'limit, int
     do {
         // Start with the base query
         sql:ParameterizedQuery baseQuery = `SELECT ae.id, ae.org_id, ae.event_type, ae.timestamp, ae.user_id, ae.resource, ae.workflow_instance_id, ae.comment, wd.id, wd.name, wd.description
-                                            FROM audit_event ae
-                                            JOIN workflow_definition wd ON ae.workflow_definition_id = wd.id
-                                            WHERE ae.org_id = ${context.orgId}`;
+            FROM audit_event ae
+            JOIN workflow_definition wd ON ae.workflow_definition_id = wd.id
+            WHERE ae.org_id = ${context.orgId}`;
 
         // Create an empty list to hold additional query fragments
         sql:ParameterizedQuery[] queryFragments = [];

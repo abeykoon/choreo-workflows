@@ -302,7 +302,7 @@ service http:InterceptableService /workflow\-mgt/v1 on httpListener {
             util:InternalServerError httpErr = {
                 body: {
                     "error": "Internal Server Error",
-                    "details": "Error while creating workflow instance"
+                    "details": e.message()
                 }
             };
             return httpErr;

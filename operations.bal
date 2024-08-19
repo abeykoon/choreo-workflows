@@ -73,13 +73,16 @@ isolated function filterWorkflowInstancesByUser(util:Context context, stream<db:
                     description: instance.workflowDefinition.description
                 },
                 requestComment: instance.requestComment,
-                reviewerDecision: {
+                status: check instance.status.cloneWithType()
+            };
+
+            if instance.reviewerDecision != () && instance.reviewerDecision != "" {
+                wkfInstance.reviewerDecision = {
                     reviewedBy: instance.reviewedBy,
                     decision: check instance.reviewerDecision.cloneWithType(),
                     reviewComment: instance.reviewComment
-                },
-                status: check instance.status.cloneWithType()
-            };
+                };
+            }
             wkfInstances.push(wkfInstance);
         }
     };

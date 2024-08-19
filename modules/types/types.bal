@@ -74,6 +74,7 @@ public type WorkflowInstanceResponse record {|
     string wkfId; // for a given action and resource, this is unique for a given org
     string orgId;
     time:Utc createdTime;
+    string createdBy;
     *WorkflowInstanceCreateRequest;
     never data?; //We get data separately
     WorkflowDefinitionIdentifier workflowDefinitionIdentifier;
@@ -85,6 +86,7 @@ public type WorkflowInstance record {|
     string id; // for a given action and resource, this is unique for a given org
     string orgId;
     time:Utc createdTime;
+    string createdBy;
     *WorkflowInstanceCreateRequest;
     never data?; //We get data separately
     string orgWorkflowConfigId;
@@ -96,12 +98,10 @@ public type WorkflowInstance record {|
 # Request to create a workflow instance
 #
 # + context - context of the workflow. This is used to identify the workflow instance uniquely within the org
-# + createdBy - user who created the workflow instance. This is extracted from the JWT
 # + requestComment - field description
 # + data - field description
 public type WorkflowInstanceCreateRequest record {|
     WorkflowContext context;
-    string createdBy; //get by JWT
     string requestComment?;
     json data;
 |};

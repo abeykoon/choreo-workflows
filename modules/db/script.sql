@@ -59,8 +59,8 @@ CREATE TABLE "workflow_instance" (
 	"review_time" TIMESTAMP,
 	"org_workflow_config_id" VARCHAR(255) NOT NULL,
 	FOREIGN KEY("org_workflow_config_id") REFERENCES "org_workflow_config"("id"),
-	"workflowDefinitionId" VARCHAR(255) NOT NULL,
-	FOREIGN KEY("workflowDefinitionId") REFERENCES "workflow_definition"("id"),
+	"workflow_definition_id" VARCHAR(255) NOT NULL,
+	FOREIGN KEY("workflow_definition_id") REFERENCES "workflow_definition"("id"),
 	PRIMARY KEY("id")
 );
 

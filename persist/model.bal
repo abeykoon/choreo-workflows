@@ -59,6 +59,7 @@ public type WorkflowInstance record {|
     string orgId;
     @sql:Varchar {length: 255}
     string 'resource;
+    @sql:Name {value: "workflow_definition_id"}
     @sql:Varchar {length: 255}
     string workflowDefinitionId;
     @sql:Name {value: "created_by"}

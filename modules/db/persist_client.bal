@@ -54,12 +54,12 @@ public isolated client class Client {
                 "workflowinstance[].reviewComment": {relation: {entityName: "workflowinstance", refField: "reviewComment", refColumn: "review_comment"}},
                 "workflowinstance[].reviewTime": {relation: {entityName: "workflowinstance", refField: "reviewTime", refColumn: "review_time"}},
                 "workflowinstance[].orgWorkflowConfigId": {relation: {entityName: "workflowinstance", refField: "orgWorkflowConfigId", refColumn: "org_workflow_config_id"}},
-                "workflowinstance[].workflowDefinitionId": {relation: {entityName: "workflowinstance", refField: "workflowDefinitionId"}}
+                "workflowinstance[].workflowDefinitionId": {relation: {entityName: "workflowinstance", refField: "workflowDefinitionId", refColumn: "workflow_definition_id"}}
             },
             keyFields: ["id"],
             joinMetadata: {
                 orgworkflowconfigs: {entity: OrgWorkflowConfig, fieldName: "orgworkflowconfigs", refTable: "org_workflow_config", refColumns: ["workflow_definition_id"], joinColumns: ["id"], 'type: psql:MANY_TO_ONE},
-                workflowinstance: {entity: WorkflowInstance, fieldName: "workflowinstance", refTable: "workflow_instance", refColumns: ["workflowDefinitionId"], joinColumns: ["id"], 'type: psql:MANY_TO_ONE}
+                workflowinstance: {entity: WorkflowInstance, fieldName: "workflowinstance", refTable: "workflow_instance", refColumns: ["workflow_definition_id"], joinColumns: ["id"], 'type: psql:MANY_TO_ONE}
             }
         },
         [AUDIT_EVENT]: {
@@ -95,7 +95,7 @@ public isolated client class Client {
                 reviewComment: {columnName: "review_comment"},
                 reviewTime: {columnName: "review_time"},
                 orgWorkflowConfigId: {columnName: "org_workflow_config_id"},
-                workflowDefinitionId: {columnName: "workflowDefinitionId"},
+                workflowDefinitionId: {columnName: "workflow_definition_id"},
                 "orgworkflowconfig.id": {relation: {entityName: "orgworkflowconfig", refField: "id"}},
                 "orgworkflowconfig.orgId": {relation: {entityName: "orgworkflowconfig", refField: "orgId", refColumn: "org_id"}},
                 "orgworkflowconfig.assigneeRoles": {relation: {entityName: "orgworkflowconfig", refField: "assigneeRoles", refColumn: "assignee_roles"}},
@@ -114,7 +114,7 @@ public isolated client class Client {
             keyFields: ["id"],
             joinMetadata: {
                 orgworkflowconfig: {entity: OrgWorkflowConfig, fieldName: "orgworkflowconfig", refTable: "org_workflow_config", refColumns: ["id"], joinColumns: ["org_workflow_config_id"], 'type: psql:ONE_TO_MANY},
-                workflowDefinition: {entity: WorkflowDefinition, fieldName: "workflowDefinition", refTable: "workflow_definition", refColumns: ["id"], joinColumns: ["workflowDefinitionId"], 'type: psql:ONE_TO_MANY}
+                workflowDefinition: {entity: WorkflowDefinition, fieldName: "workflowDefinition", refTable: "workflow_definition", refColumns: ["id"], joinColumns: ["workflow_definition_id"], 'type: psql:ONE_TO_MANY}
             }
         },
         [ORG_WORKFLOW_CONFIG]: {
@@ -148,7 +148,7 @@ public isolated client class Client {
                 "workflowinstances[].reviewComment": {relation: {entityName: "workflowinstances", refField: "reviewComment", refColumn: "review_comment"}},
                 "workflowinstances[].reviewTime": {relation: {entityName: "workflowinstances", refField: "reviewTime", refColumn: "review_time"}},
                 "workflowinstances[].orgWorkflowConfigId": {relation: {entityName: "workflowinstances", refField: "orgWorkflowConfigId", refColumn: "org_workflow_config_id"}},
-                "workflowinstances[].workflowDefinitionId": {relation: {entityName: "workflowinstances", refField: "workflowDefinitionId"}}
+                "workflowinstances[].workflowDefinitionId": {relation: {entityName: "workflowinstances", refField: "workflowDefinitionId", refColumn: "workflow_definition_id"}}
             },
             keyFields: ["id"],
             joinMetadata: {
